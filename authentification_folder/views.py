@@ -23,11 +23,18 @@ class RegisterView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
         
+        
 class VerifyEmailView(APIView):
     def get(self,request):
+        
         token = request.GET.get('token')
+        if not token:
+            token = request.data['token']
+            print("Token from POST request:")
+      
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            print(payload)
             if payload['type'] != 'email_verification':
                 return Response(
                     {"error": "Invalid token type."},
@@ -51,8 +58,9 @@ class VerifyEmailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         except jwt.InvalidTokenError:
+            
             return Response(
-                {"error": "Invalid token."},
+                {"error": "Invalid token provided."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except User.DoesNotExist:
@@ -65,6 +73,7 @@ class VerifyEmailView(APIView):
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    
 
 class LoginView(APIView):
     def post(self, request):
