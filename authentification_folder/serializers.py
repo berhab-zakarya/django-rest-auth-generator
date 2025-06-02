@@ -59,10 +59,13 @@ class LoginSerializer(serializers.ModelSerializer):
         
         refresh = RefreshToken.for_user(user)
         return {
-            'user': user,
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-        }
+                'user_id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
         
 class PasswordResetRequestSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
