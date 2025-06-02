@@ -5,6 +5,13 @@ from pathlib import Path
 import shutil
 import re
 
+# Import the user model customizer
+try:
+    from user_model_customizer import customize_user_model
+except ImportError:
+    print("Warning: user_model_customizer.py not found. User model customization will be skipped.")
+    customize_user_model = None
+
 def create_file(file_path, content):
     with open(file_path, 'w') as f:
         f.write(content)
@@ -16,8 +23,6 @@ def run_command(command):
         print(f"Error executing command: {command}")
         print(e)
         sys.exit(1)
-
-
 
 def update_import_statements(app_dir, old_app_name="authentification", new_app_name=None):
     """
@@ -83,7 +88,6 @@ def update_import_statements(app_dir, old_app_name="authentification", new_app_n
     
     print(f"Import statement update completed for {app_dir}")
 
-
 def copy_authentication_files(source_dir, dest_dir, app_name):
     """
     Copy files from /authentification to the new app directory and update imports
@@ -115,8 +119,7 @@ def copy_authentication_files(source_dir, dest_dir, app_name):
             print(f"Error copying files: {e}")
     else:
         print(f"Warning: Source directory {source_dir} not found. Skipping file copy.")
-        
-        
+
 def check_existing_venv():
     """Check for existing virtual environments in current directory"""
     common_venv_names = ['venv', 'env', '.venv', 'virtualenv']
@@ -206,7 +209,25 @@ def main():
 
     # Copy files from /authentification to the new app
     print(f"\nCopying authentication files to {app_name} app...")
-    copy_authentication_files("authentification_folder", app_name,app_name)
+    copy_authentication_files("authentification_folder", app_name, app_name)
+
+    # User model customization
+    if customize_user_model:
+        print(f"\n{'='*60}")
+        print("USER MODEL CUSTOMIZATION")
+        print(f"{'='*60}")
+        customize_models = input("Do you want to customize the User model? (y/n): ").lower().strip() == 'y'
+        
+        if customize_models:
+            success = customize_user_model(app_name)
+            if success:
+                print("✅ User model customized successfully!")
+            else:
+                print("❌ User model customization failed, using default model.")
+        else:
+            print("ℹ️  Using default User model configuration.")
+    else:
+        print("⚠️  User model customization not available. Using default configuration.")
 
     # Create .env file
     env_content = """# Django Settings
@@ -251,9 +272,9 @@ from decouple import config
     # Update SECRET_KEY to use environment variable
     secret_key_pattern = r"SECRET_KEY = ['\"][^'\"]*['\"]"
     settings_content = re.sub(
-    secret_key_pattern,
-    "SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me')",
-    settings_content
+        secret_key_pattern,
+        "SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me')",
+        settings_content
     )
     
     # Update DEBUG to use environment variable
@@ -314,8 +335,6 @@ DEFAULT_USER_PREFERENCES = {{
     "notifications": {{"email": True, "push": True}},
 }}
 
-
-
 # Email Settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -345,7 +364,9 @@ CORS_ALLOW_CREDENTIALS = True
     project_urls_path = Path(project_name) / 'urls.py'
     project_urls_content = f"""from django.contrib import admin
 from django.urls import path, include
-path_v1='api/v1/'
+
+path_v1 = 'api/v1/'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path(f'{{path_v1}}/', include('{app_name}.urls')),
@@ -389,7 +410,7 @@ urlpatterns = [
         print("2. Update SECRET_KEY in .env file")
         print(f"3. Customize the {app_name} app as needed")
         print("\nAuthentication endpoints will be available at:")
-        print("  - /api/auth/ (based on your app's URL configuration)")
+        print("  - /api/v1/ (based on your app's URL configuration)")
 
 if __name__ == "__main__":
     main()
