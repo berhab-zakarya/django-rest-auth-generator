@@ -12,7 +12,7 @@ def send_verification_email(user):
     }, settings.SECRET_KEY, algorithm='HS256')
     subject = "Reset your password"
     message = f"Hi {user.email},\n\nPlease reset your password by clicking the link below:\n\n"
-    message += f"http://127.0.0.1:8000/api/v1/reset-password?token={token}\n\n"
+    message += f"http://127.0.0.1:8000/api/v1/auth/verify-email/?token={token}\n\n"
     message += "This link is valid for 24 hour.\n\nThank you,\nALGECOM Team"
     try:
         send_mail(
